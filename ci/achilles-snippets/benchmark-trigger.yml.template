@@ -1,0 +1,23 @@
+# Copy to achilles/.github/workflows/benchmark-trigger.yml
+# Replace __OWNER__ with the GitHub user/org that owns bookhive-benchmark.
+# Requires the secret BENCHMARK_DISPATCH_TOKEN: a PAT with `contents: write` on
+# bookhive-benchmark (enough to send a repository_dispatch).
+
+name: 🧪 Benchmark trigger
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.BENCHMARK_DISPATCH_TOKEN }}
+          repository: __OWNER__/bookhive-benchmark
+          event-type: achilles-pr
+          client-payload: |
+            {"pr_number":"${{ github.event.pull_request.number }}",
+             "head_sha":"${{ github.event.pull_request.head.sha }}",
+             "achilles_ref":"${{ github.event.pull_request.head.ref }}",
+             "achilles_repo":"${{ github.repository }}"}
