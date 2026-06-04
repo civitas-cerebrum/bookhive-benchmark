@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0.0",
+  "run": {
+    "id": "2026-06-04T10:00:00Z-abc1234",
+    "started_at": "2026-06-04T10:00:00Z",
+    "ended_at": "2026-06-04T10:00:20Z",
+    "duration_sec": 20,
+    "mode": "local",
+    "truncated": false,
+    "achilles_version": "0.1.0",
+    "achilles_commit": "abc1234567",
+    "claude_code_version": "1.0.0",
+    "host": { "runner_os": "darwin", "cpu_count": 8, "mem_gb": 16 }
+  },
+  "totals": {
+    "tokens": { "input": 120, "output": 40, "cache_read": 0, "cache_creation": 50, "total": 210 },
+    "turns": 2,
+    "tool_calls": 1,
+    "subagent_dispatches": 1,
+    "gate_failures": 0,
+    "retries": 1
+  },
+  "phases": [
+    {
+      "name": "scaffold",
+      "started_at": "2026-06-04T10:00:01Z",
+      "ended_at": "2026-06-04T10:00:30Z",
+      "duration_sec": 29,
+      "turns": 2,
+      "tokens": { "input": 120, "output": 40, "cache_read": 0, "cache_creation": 50, "total": 210 },
+      "tool_calls_by_name": { "Bash": 1 },
+      "subagent_dispatches": [],
+      "gate_outcome": "pass",
+      "retries": 0
+    },
+    {
+      "name": "groundwork",
+      "started_at": "2026-06-04T10:00:31Z",
+      "ended_at": "2026-06-04T10:00:20Z",
+      "duration_sec": 0,
+      "turns": 0,
+      "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 },
+      "tool_calls_by_name": {},
+      "subagent_dispatches": [
+        { "subagent_type": "general-purpose", "duration_sec": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "returned_ok": true }
+      ],
+      "gate_outcome": "pass",
+      "retries": 0
+    },
+    { "name": "happy-path", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 1 },
+    { "name": "journey-mapping", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 0 },
+    { "name": "coverage-expansion", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 0 },
+    { "name": "bug-discovery", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 0 },
+    { "name": "secrets-sweep", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 0 },
+    { "name": "report", "started_at": "2026-06-04T10:00:00Z", "ended_at": "2026-06-04T10:00:20Z", "duration_sec": 0, "turns": 0, "tokens": { "input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "total": 0 }, "tool_calls_by_name": {}, "subagent_dispatches": [], "gate_outcome": "pass", "retries": 0 }
+  ],
+  "outcomes": {
+    "scenarios_written": { "count": 2, "files": ["tests/auth.spec.ts", "tests/checkout.spec.ts"] },
+    "bugs_filed": { "count": 1, "by_severity": { "high": 0, "med": 1, "low": 0 }, "ids": ["BUG-001"] },
+    "tests_passing": { "count": 12, "total": 12, "ratio": 1 },
+    "playwright_exit_code": 0,
+    "journey_map_pages": 9
+  },
+  "retrospective": {
+    "novel_observations": "Onboarding completed without retries except on happy-path.",
+    "difficulties": "Modal cookie banner intercepted clicks during scaffold.",
+    "would_do_differently": "Pre-dismiss cookie banner in groundwork.",
+    "per_phase_impact": [
+      { "phase": "scaffold", "impact": "Smooth — no surprises." },
+      { "phase": "happy-path", "impact": "One retry for cookie banner." }
+    ]
+  },
+  "discrepancies": [],
+  "baseline_comparison": {
+    "baseline_id": null,
+    "deltas": {},
+    "regression_verdict": "pass",
+    "regression_thresholds": { "tokens_total_pct": 25, "duration_pct": 50, "tests_ratio_drop": 0.1 }
+  }
+}
