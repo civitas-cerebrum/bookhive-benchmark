@@ -1,0 +1,16 @@
+{
+  "phases": [
+    { "name": "scaffold", "gate_outcome": "pass", "retries": 0 },
+    { "name": "groundwork", "gate_outcome": "pass", "retries": 0 },
+    { "name": "happy-path", "gate_outcome": "pass", "retries": 1 },
+    { "name": "journey-mapping", "gate_outcome": "pass", "retries": 0 },
+    { "name": "coverage-expansion", "gate_outcome": "pass", "retries": 0 },
+    { "name": "bug-discovery", "gate_outcome": "pass", "retries": 0 },
+    { "name": "secrets-sweep", "gate_outcome": "pass", "retries": 0 },
+    { "name": "report", "gate_outcome": "pass", "retries": 0 }
+  ],
+  "scenarios": { "files": ["tests/auth.spec.ts", "tests/checkout.spec.ts"] },
+  "bugs": { "ids": ["BUG-001"], "by_severity": { "high": 0, "med": 1, "low": 0 } },
+  "tests": { "passing": 12, "total": 12, "playwright_exit_code": 0 },
+  "journey_map": { "pages": 9 }
+}

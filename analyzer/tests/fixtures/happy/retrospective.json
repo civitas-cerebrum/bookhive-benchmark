@@ -1,0 +1,9 @@
+{
+  "novel_observations": "Onboarding completed without retries except on happy-path.",
+  "difficulties": "Modal cookie banner intercepted clicks during scaffold.",
+  "would_do_differently": "Pre-dismiss cookie banner in groundwork.",
+  "per_phase_impact": [
+    { "phase": "scaffold", "impact": "Smooth — no surprises." },
+    { "phase": "happy-path", "impact": "One retry for cookie banner." }
+  ]
+}
