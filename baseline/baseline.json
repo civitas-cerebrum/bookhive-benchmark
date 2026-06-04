@@ -1,0 +1,6 @@
+{
+  "id": "2026-05-30T00:00:00Z-main",
+  "totals": { "tokens": { "total": 200 } },
+  "run": { "duration_sec": 20 },
+  "outcomes": { "tests_passing": { "ratio": 1.0 } }
+}
