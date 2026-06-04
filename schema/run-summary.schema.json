@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Umutayb/bookhive-benchmark/schema/run-summary.schema.json",
+  "title": "achilles run-summary.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["phases", "scenarios", "bugs", "tests", "journey_map"],
+  "properties": {
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "gate_outcome", "retries"],
+        "properties": {
+          "name": {
+            "enum": ["scaffold", "groundwork", "happy-path", "journey-mapping", "coverage-expansion", "bug-discovery", "secrets-sweep", "report"]
+          },
+          "gate_outcome": { "enum": ["pass", "fail"] },
+          "retries": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files"],
+      "properties": {
+        "files": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "bugs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ids", "by_severity"],
+      "properties": {
+        "ids": { "type": "array", "items": { "type": "string" } },
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["high", "med", "low"],
+          "properties": {
+            "high": { "type": "integer", "minimum": 0 },
+            "med": { "type": "integer", "minimum": 0 },
+            "low": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passing", "total", "playwright_exit_code"],
+      "properties": {
+        "passing": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 },
+        "playwright_exit_code": { "type": "integer" }
+      }
+    },
+    "journey_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pages"],
+      "properties": {
+        "pages": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
