@@ -1,0 +1,12 @@
+Before we finish, write `.benchmark/retrospective.json` with this exact JSON shape:
+
+{
+  "novel_observations": "<what was new or unexpected this run>",
+  "difficulties": "<what was hardest>",
+  "would_do_differently": "<what you'd change next time>",
+  "per_phase_impact": [
+    { "phase": "scaffold", "impact": "<one sentence>" }
+  ]
+}
+
+Valid phase names: scaffold, groundwork, happy-path, journey-mapping, coverage-expansion, bug-discovery, secrets-sweep, report.

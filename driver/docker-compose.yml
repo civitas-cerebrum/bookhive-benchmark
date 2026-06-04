@@ -1,0 +1,14 @@
+services:
+  bookhive:
+    image: umutayb/bookhive:latest
+    container_name: bookhive-benchmark-bookhive
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "default"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
