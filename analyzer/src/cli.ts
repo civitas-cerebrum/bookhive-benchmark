@@ -5,7 +5,7 @@ import { parseTranscript } from './parseTranscript.js';
 import { parseHookLog } from './parseHookLog.js';
 import { readSelfReport } from './readSelfReport.js';
 import { readRetrospective } from './readRetrospective.js';
-import { assemble } from './assemble.js';
+import { assemble, crossCheckOnDisk } from './assemble.js';
 import { compare, readBaseline } from './compare.js';
 import { validateResults } from './validate.js';
 import type { AssembleInputs } from './types.js';
@@ -78,7 +78,9 @@ async function main() {
   ]);
 
   const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta });
-  const final = compare(assembled, baseline);
+  const projectDir = args['project-dir'];
+  const checked = projectDir ? await crossCheckOnDisk(assembled, projectDir) : assembled;
+  const final = compare(checked, baseline);
 
   const v = await validateResults(final);
   if (!v.ok) {

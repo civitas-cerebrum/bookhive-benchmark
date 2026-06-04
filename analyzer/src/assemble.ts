@@ -1,3 +1,4 @@
+import { access, readdir } from 'node:fs/promises';
 import type { AssembleInputs, Results, Tokens, PhaseName, HookEvent } from './types.js';
 
 const ZERO_TOKENS: Tokens = { input: 0, output: 0, cache_read: 0, cache_creation: 0, total: 0 };
@@ -172,4 +173,33 @@ export function assemble(inputs: AssembleInputs): Results {
       regression_thresholds: { tokens_total_pct: 25, duration_pct: 50, tests_ratio_drop: 0.1 },
     },
   };
+}
+
+export async function crossCheckOnDisk(result: Results, projectDir: string): Promise<Results> {
+  const discrepancies = [...result.discrepancies];
+  try {
+    const testsDir = `${projectDir}/tests`;
+    await access(testsDir);
+    const files: string[] = [];
+    async function walk(d: string) {
+      const entries = await readdir(d, { withFileTypes: true });
+      for (const ent of entries) {
+        const p = `${d}/${ent.name}`;
+        if (ent.isDirectory()) await walk(p);
+        else if (ent.isFile() && /\.spec\.(ts|js|mjs)$/.test(ent.name)) files.push(p);
+      }
+    }
+    await walk(testsDir);
+    if (files.length !== result.outcomes.scenarios_written.count) {
+      discrepancies.push({
+        kind: 'scenario_count_mismatch',
+        detail: `self-report says ${result.outcomes.scenarios_written.count}, on-disk has ${files.length}`,
+        self_report: result.outcomes.scenarios_written.count,
+        on_disk: files.length,
+      });
+    }
+  } catch {
+    /* tests/ may not exist; captured elsewhere */
+  }
+  return { ...result, discrepancies };
 }

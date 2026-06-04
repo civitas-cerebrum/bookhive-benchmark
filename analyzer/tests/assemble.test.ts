@@ -6,7 +6,7 @@ import { parseTranscript } from '../src/parseTranscript.js';
 import { parseHookLog } from '../src/parseHookLog.js';
 import { readSelfReport } from '../src/readSelfReport.js';
 import { readRetrospective } from '../src/readRetrospective.js';
-import { assemble } from '../src/assemble.js';
+import { assemble, crossCheckOnDisk } from '../src/assemble.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string) => join(here, 'fixtures/happy', name);
@@ -53,5 +53,23 @@ describe('assemble', () => {
     });
     expect(result.discrepancies.some((d) => d.kind === 'self_report_missing')).toBe(true);
     expect(result.discrepancies.some((d) => d.kind === 'retrospective_missing')).toBe(true);
+  });
+});
+
+describe('crossCheckOnDisk', () => {
+  it('records scenario_count_mismatch when on-disk files differ from self-report count', async () => {
+    const turns = await parseTranscript(fixture('transcript.jsonl'));
+    const hookEvents = await parseHookLog(fixture('hook.log'));
+    const selfReport = await readSelfReport(join(here, 'fixtures/scenario-count-mismatch/run-summary.json'));
+    const result = assemble({
+      turns, hookEvents, selfReport, retrospective: null,
+      meta: {
+        achilles_version: '0.1.0', achilles_commit: 'abc1234567',
+        claude_code_version: '1.0.0', mode: 'local',
+        host: { runner_os: 'darwin', cpu_count: 8, mem_gb: 16 },
+      },
+    });
+    const checked = await crossCheckOnDisk(result, join(here, 'fixtures/scenario-count-mismatch'));
+    expect(checked.discrepancies.some((d) => d.kind === 'scenario_count_mismatch')).toBe(true);
   });
 });
