@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.benchmark/
+.achilles/
+tests/
+playwright-report/
+test-results/
+results/*.json
+!results/.gitkeep
+.env
+.DS_Store
