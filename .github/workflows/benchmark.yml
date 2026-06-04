@@ -1,0 +1,142 @@
+name: 🧪 bookhive-benchmark
+
+on:
+  repository_dispatch:
+    types: [achilles-pr]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Achilles PR number (for manual reruns)"
+        required: true
+      head_sha:
+        description: "Achilles PR head SHA"
+        required: true
+      achilles_ref:
+        description: "Achilles PR branch ref"
+        required: true
+      achilles_repo:
+        description: "owner/repo of achilles"
+        required: true
+        default: "Umutayb/achilles"
+
+concurrency:
+  group: benchmark-${{ github.event.client_payload.head_sha || inputs.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      PR_NUMBER:    ${{ github.event.client_payload.pr_number || inputs.pr_number }}
+      HEAD_SHA:     ${{ github.event.client_payload.head_sha || inputs.head_sha }}
+      ACHILLES_REF: ${{ github.event.client_payload.achilles_ref || inputs.achilles_ref }}
+      ACHILLES_REPO: ${{ github.event.client_payload.achilles_repo || inputs.achilles_repo }}
+      MAX_RUN_TOKENS: "5000000"
+    steps:
+      - name: Checkout bookhive-benchmark
+        uses: actions/checkout@v4
+        with: { path: bench }
+
+      - name: Checkout achilles @ head_sha
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ACHILLES_REPO }}
+          ref: ${{ env.HEAD_SHA }}
+          path: achilles
+          token: ${{ secrets.ACHILLES_BENCHMARK_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Install Claude Code CLI
+        run: npm i -g @anthropic-ai/claude-code@latest
+
+      - name: Install jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq
+
+      - name: Prepare benchmark (restart.sh)
+        working-directory: bench
+        env:
+          ACHILLES_PATH: ${{ github.workspace }}/achilles
+        run: ./restart.sh
+
+      - name: Run achilles via headless Claude Code
+        working-directory: bench
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BOOKHIVE_BENCHMARK: "1"
+          BENCHMARK_DIR: ${{ github.workspace }}/bench/.benchmark
+          BENCHMARK_MODE: "ci"
+        run: |
+          set -e
+          mkdir -p .benchmark/run
+          claude -p "complete e2e test automation" \
+            --output-format=stream-json \
+            --dangerously-skip-permissions \
+            --max-turns 400 \
+            > .benchmark/run/stream.jsonl \
+            2> .benchmark/run/stream.err || true
+          total=$(jq -s '[.[] | .usage.input_tokens + .usage.output_tokens] | add // 0' .benchmark/run/stream.jsonl 2>/dev/null || echo 0)
+          echo "TOTAL_TOKENS=$total" >> $GITHUB_ENV
+          if [ "$total" -gt "$MAX_RUN_TOKENS" ]; then
+            echo "::warning::run exceeded MAX_RUN_TOKENS ($total > $MAX_RUN_TOKENS), marking as truncated"
+            touch .benchmark/run/.truncated
+          fi
+
+      - name: Analyze
+        working-directory: bench
+        run: |
+          set -e
+          [ -f .benchmark/run/.truncated ] && export BENCHMARK_TRUNCATED=1
+          ./restart.sh --analyze
+          latest=$(ls -1t results/*.json | head -1)
+          echo "RESULTS_PATH=$latest" >> $GITHUB_ENV
+          jq -r '.baseline_comparison.regression_verdict' "$latest" > .benchmark/verdict
+          echo "VERDICT=$(cat .benchmark/verdict)" >> $GITHUB_ENV
+
+      - name: Publish check_run on achilles
+        env:
+          GH_TOKEN: ${{ secrets.ACHILLES_BENCHMARK_TOKEN }}
+        run: |
+          conclusion="success"
+          case "$VERDICT" in
+            warn) conclusion="neutral" ;;
+            fail) conclusion="failure" ;;
+          esac
+          gh api "repos/$ACHILLES_REPO/check-runs" \
+            -X POST \
+            -f name='bookhive-benchmark' \
+            -f head_sha="$HEAD_SHA" \
+            -f status='completed' \
+            -f conclusion="$conclusion" \
+            -f output.title="Verdict: $VERDICT" \
+            -f output.summary="See workflow run for full results JSON" \
+            >/dev/null
+
+      - name: Comment on achilles PR
+        env:
+          GH_TOKEN: ${{ secrets.ACHILLES_BENCHMARK_TOKEN }}
+        run: |
+          body=$(jq -n \
+            --arg verdict "$VERDICT" \
+            --arg total "$TOTAL_TOKENS" \
+            --slurpfile r "$RESULTS_PATH" \
+            '{
+              md: ("## bookhive-benchmark — \($verdict)\n\n"
+                + "- tokens: \($total)\n"
+                + "- duration_sec: \($r[0].run.duration_sec)\n"
+                + "- scenarios: \($r[0].outcomes.scenarios_written.count)\n"
+                + "- bugs: \($r[0].outcomes.bugs_filed.count)\n"
+                + "- tests passing: \($r[0].outcomes.tests_passing.count)/\($r[0].outcomes.tests_passing.total)\n\n"
+                + "<details><summary>baseline deltas</summary>\n\n```\n"
+                + ($r[0].baseline_comparison.deltas | tostring)
+                + "\n```\n</details>")
+            }' | jq -r .md)
+          gh pr comment "$PR_NUMBER" --repo "$ACHILLES_REPO" --body "$body"
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookhive-benchmark-results
+          path: bench/results/*.json
