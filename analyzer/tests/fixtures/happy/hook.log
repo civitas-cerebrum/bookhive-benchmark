@@ -1,0 +1,4 @@
+{"t":"2026-06-04T10:00:01Z","kind":"phase.start","phase":"scaffold","turn_index":0}
+{"t":"2026-06-04T10:00:30Z","kind":"phase.end","phase":"scaffold","turn_index":1,"gate_result":"pass"}
+{"t":"2026-06-04T10:00:31Z","kind":"phase.start","phase":"groundwork","turn_index":2}
+{"t":"2026-06-04T10:00:35Z","kind":"subagent.dispatch","parent_phase":"groundwork","subagent_type":"general-purpose","prompt_chars":1842}
