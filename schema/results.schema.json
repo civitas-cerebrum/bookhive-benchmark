@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Umutayb/bookhive-benchmark/schema/results.schema.json",
+  "title": "bookhive-benchmark results.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run", "totals", "phases", "outcomes", "retrospective", "discrepancies", "baseline_comparison"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "started_at", "ended_at", "duration_sec", "mode", "truncated", "achilles_version", "achilles_commit", "claude_code_version", "host"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "started_at": { "type": "string", "format": "date-time" },
+        "ended_at": { "type": "string", "format": "date-time" },
+        "duration_sec": { "type": "integer", "minimum": 0 },
+        "mode": { "enum": ["local", "ci"] },
+        "truncated": { "type": "boolean" },
+        "achilles_version": { "type": "string" },
+        "achilles_commit": { "type": "string" },
+        "claude_code_version": { "type": "string" },
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runner_os", "cpu_count", "mem_gb"],
+          "properties": {
+            "runner_os": { "type": "string" },
+            "cpu_count": { "type": "integer", "minimum": 1 },
+            "mem_gb": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens", "turns", "tool_calls", "subagent_dispatches", "gate_failures", "retries"],
+      "properties": {
+        "tokens": { "$ref": "#/$defs/tokens" },
+        "turns": { "type": "integer", "minimum": 0 },
+        "tool_calls": { "type": "integer", "minimum": 0 },
+        "subagent_dispatches": { "type": "integer", "minimum": 0 },
+        "gate_failures": { "type": "integer", "minimum": 0 },
+        "retries": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "outcomes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarios_written", "bugs_filed", "tests_passing", "playwright_exit_code", "journey_map_pages"],
+      "properties": {
+        "scenarios_written": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "files"],
+          "properties": {
+            "count": { "type": "integer", "minimum": 0 },
+            "files": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "bugs_filed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "by_severity", "ids"],
+          "properties": {
+            "count": { "type": "integer", "minimum": 0 },
+            "by_severity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["high", "med", "low"],
+              "properties": {
+                "high": { "type": "integer", "minimum": 0 },
+                "med": { "type": "integer", "minimum": 0 },
+                "low": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "ids": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "tests_passing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "total", "ratio"],
+          "properties": {
+            "count": { "type": "integer", "minimum": 0 },
+            "total": { "type": "integer", "minimum": 0 },
+            "ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "playwright_exit_code": { "type": "integer" },
+        "journey_map_pages": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "retrospective": { "$ref": "#/$defs/retrospective" },
+    "discrepancies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": { "type": "string" },
+          "detail": { "type": "string" },
+          "self_report": {},
+          "on_disk": {}
+        }
+      }
+    },
+    "baseline_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_id", "deltas", "regression_verdict", "regression_thresholds"],
+      "properties": {
+        "baseline_id": { "type": ["string", "null"] },
+        "deltas": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["baseline", "current"],
+            "properties": {
+              "baseline": { "type": "number" },
+              "current": { "type": "number" },
+              "delta_pct": { "type": "number" },
+              "delta_abs": { "type": "number" }
+            }
+          }
+        },
+        "regression_verdict": { "enum": ["pass", "warn", "fail"] },
+        "regression_thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tokens_total_pct", "duration_pct", "tests_ratio_drop"],
+          "properties": {
+            "tokens_total_pct": { "type": "number" },
+            "duration_pct": { "type": "number" },
+            "tests_ratio_drop": { "type": "number" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "output", "cache_read", "cache_creation", "total"],
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 },
+        "cache_read": { "type": "integer", "minimum": 0 },
+        "cache_creation": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "phaseName": {
+      "enum": ["scaffold", "groundwork", "happy-path", "journey-mapping", "coverage-expansion", "bug-discovery", "secrets-sweep", "report"]
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "started_at", "ended_at", "duration_sec", "turns", "tokens", "tool_calls_by_name", "subagent_dispatches", "gate_outcome", "retries"],
+      "properties": {
+        "name": { "$ref": "#/$defs/phaseName" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "ended_at": { "type": "string", "format": "date-time" },
+        "duration_sec": { "type": "integer", "minimum": 0 },
+        "turns": { "type": "integer", "minimum": 0 },
+        "tokens": { "$ref": "#/$defs/tokens" },
+        "tool_calls_by_name": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "subagent_dispatches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subagent_type", "duration_sec", "tokens", "returned_ok"],
+            "properties": {
+              "subagent_type": { "type": "string" },
+              "duration_sec": { "type": "integer", "minimum": 0 },
+              "tokens": { "$ref": "#/$defs/tokens" },
+              "returned_ok": { "type": "boolean" }
+            }
+          }
+        },
+        "gate_outcome": { "enum": ["pass", "fail"] },
+        "retries": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "retrospective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["novel_observations", "difficulties", "would_do_differently", "per_phase_impact"],
+      "properties": {
+        "novel_observations": { "type": "string" },
+        "difficulties": { "type": "string" },
+        "would_do_differently": { "type": "string" },
+        "per_phase_impact": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["phase", "impact"],
+            "properties": {
+              "phase": { "$ref": "#/$defs/phaseName" },
+              "impact": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
