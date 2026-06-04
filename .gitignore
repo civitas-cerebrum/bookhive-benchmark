@@ -2,9 +2,9 @@ node_modules/
 dist/
 .benchmark/
 .achilles/
-tests/
-playwright-report/
-test-results/
+/tests/
+/playwright-report/
+/test-results/
 results/*.json
 !results/.gitkeep
 .env
