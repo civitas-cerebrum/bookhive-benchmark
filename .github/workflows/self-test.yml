@@ -1,0 +1,71 @@
+name: 🧪 benchmark self-test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "analyzer/**"
+      - "hooks/**"
+      - "scripts/**"
+      - "schema/**"
+      - "baseline/**"
+      - "package.json"
+      - ".github/workflows/self-test.yml"
+
+jobs:
+  self-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Install deps
+        run: npm install --silent
+
+      - name: TS typecheck
+        run: npm run typecheck
+
+      - name: TS tests
+        run: npm test
+
+      - name: Install bats + jq
+        run: sudo apt-get update -y && sudo apt-get install -y bats jq
+
+      - name: Shell tests
+        run: npm run test:sh
+
+      - name: Analyzer end-to-end with fixtures
+        run: |
+          mkdir -p .benchmark/run results
+          cp analyzer/tests/fixtures/happy/transcript.jsonl .benchmark/run/transcript.jsonl
+          cp analyzer/tests/fixtures/happy/hook.log .benchmark/run/hook.log
+          mkdir -p .achilles && cp analyzer/tests/fixtures/happy/run-summary.json .achilles/run-summary.json
+          mkdir -p .benchmark && cp analyzer/tests/fixtures/happy/retrospective.json .benchmark/retrospective.json
+          cat > .benchmark/meta.json <<'JSON'
+          {"achilles_version":"selftest","achilles_commit":"deadbeef","claude_code_version":"selftest","mode":"ci","host":{"runner_os":"linux","cpu_count":2,"mem_gb":7}}
+          JSON
+          npx tsx analyzer/src/cli.ts analyze \
+            --transcript .benchmark/run/transcript.jsonl \
+            --hooks .benchmark/run/hook.log \
+            --self-report .achilles/run-summary.json \
+            --retro .benchmark/retrospective.json \
+            --baseline baseline/baseline.json \
+            --meta .benchmark/meta.json \
+            --project-dir . \
+            --out results/selftest.json
+
+      - name: Validate self-test result
+        run: |
+          jq -e '.schema_version == "1.0.0"' results/selftest.json
+          jq -e '.baseline_comparison.regression_verdict' results/selftest.json
+
+      - name: Exercise fake claude binary
+        run: |
+          chmod +x ci/fakes/claude
+          echo "$PWD/ci/fakes" >> $GITHUB_PATH
+
+      - name: Run fake claude
+        run: claude -p "anything" > /tmp/stream.jsonl
