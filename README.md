@@ -41,7 +41,7 @@ That's it.
 - Node.js 20+
 - Docker + Docker Compose v2
 - A working `claude` (Claude Code CLI)
-- An achilles checkout. Default discovery: sibling at `../achilles`. Override with `ACHILLES_PATH=/abs/path ./restart.sh`.
+- An achilles checkout. Default discovery: sibling at `../achilles`. Override with `ACHILLES_PATH=/abs/path ./restart.sh`. `restart.sh` runs `npm pack` on it and installs the tarball (not the folder, which npm symlinks and achilles' postinstall skips), then verifies the harness landed.
 
 ---
 
