@@ -50,6 +50,16 @@ describe('baseline/ and results/ survive cleanup and restart (static)', () => {
     expect(unexpected, 'new rm target in cleanup.sh: make sure it is not baseline/ or results/, then allowlist it here').toEqual([]);
   });
 
+  it('cleanup.sh has the BENCHMARK_SKIP_DOCKER guard on its docker step', async () => {
+    expect(await read('scripts/cleanup.sh')).toMatch(/BENCHMARK_SKIP_DOCKER:-\}" != "1" \] && command -v docker/);
+  });
+
+  it('every test that runs cleanup.sh fakes docker', async () => {
+    for (const f of ['analyzer/tests/persistence.test.ts', 'analyzer/tests/sh/test-cleanup.bats']) {
+      expect(await read(f), f).toMatch(/fakebin/);
+    }
+  });
+
   it('restart.sh --analyze records the run but never promotes it', async () => {
     const src = await read('restart.sh');
     expect(src).toMatch(/scripts\/baseline\.sh record "\$out_file"/);
@@ -86,7 +96,19 @@ describe('cleanup.sh leaves baseline/ and results/ intact (runs a copy in a sand
     const beforeBaseline = await snapshot('baseline');
     const beforeResults = await snapshot('results');
 
-    await exec('sh', [join(proj, 'scripts/cleanup.sh')], { cwd: proj, env: { PATH: '/usr/bin:/bin', HOME: home } });
+    // Fake docker first on PATH (records args, exits 0) plus the skip guard: this test must never reach a real daemon.
+    const fakebin = join(root, 'fakebin');
+    await mkdir(fakebin);
+    await writeFile(join(fakebin, 'docker'), `#!/bin/sh\necho "$@" >> "${root}/docker.calls"\nexit 0\n`, { mode: 0o755 });
+    await mkdir(join(proj, 'driver'));
+    await writeFile(join(proj, 'driver/docker-compose.yml'), 'services: {}\n');
+    const run = (extra: Record<string, string>) =>
+      exec('sh', [join(proj, 'scripts/cleanup.sh')], { cwd: proj, env: { PATH: `${fakebin}:/usr/bin:/bin`, HOME: home, ...extra } });
+
+    await run({ BENCHMARK_SKIP_DOCKER: '1' });
+    await expect(stat(join(root, 'docker.calls'))).rejects.toThrow(); // guard honoured
+    await run({});
+    expect((await readFile(join(root, 'docker.calls'), 'utf8')).trim()).toBe('compose -f driver/docker-compose.yml down -v --remove-orphans');
 
     expect(await snapshot('baseline')).toEqual(beforeBaseline);
     expect(await snapshot('results')).toEqual(beforeResults);
