@@ -1,6 +1,41 @@
 {
-  "id": "2026-05-30T00:00:00Z-main",
-  "totals": { "tokens": { "total": 200 } },
-  "run": { "duration_sec": 20 },
-  "outcomes": { "tests_passing": { "ratio": 1.0 } }
+  "id": "2026-06-22T20:01:58Z-dda8611",
+  "date": "2026-06-22",
+  "achilles_version": null,
+  "achilles_commit": null,
+  "source": "reconstructed-from-deck",
+  "outcomes": {
+    "bugs_by_severity": {
+      "critical": 2,
+      "high": 1,
+      "medium": 4,
+      "low": 2
+    },
+    "bugs_total": 9,
+    "tests_total": 112,
+    "tests_passing_ratio": 1.0,
+    "scenarios": 23,
+    "journeys": 18,
+    "phases_completed": 8
+  },
+  "process": {
+    "duration_sec": null,
+    "tokens_total": null,
+    "commit_span_sec": 17520
+  },
+  "metric_sources": {
+    "achilles_version": "deck footer only says '@civitas-cerebrum/achilles linked' (no version). onboarding-status.json in this tree is byte-identical to run 3's (pipelineVersion 0.1.1, startedAt 08:35Z) so it is a carry-over, not evidence for this run",
+    "achilles_commit": "not recorded in any June artifact",
+    "bugs_by_severity": "deck slide 7 and the 'App-bug summary' table in tests/e2e/docs/adversarial-findings.md @ dda8611: 2 critical (non-atomic checkout, non-atomic buy), 1 high (validation->500), 4 medium, 2 low. The ledger's later 'Phase-6 additions' add 2 high + 1 low (12 total: 2/3/4/3), which the deck does not count",
+    "bugs_total": "deck: 9 app bugs (matches the pre-Phase-6 ledger table)",
+    "tests_total": "deck: 112 tests across 23 specs, 112/112 passing",
+    "tests_passing_ratio": "deck: 100% green, 0 flakes",
+    "scenarios": "deck: 23 spec files",
+    "journeys": "deck: 18 prioritised journeys (+3 reusable sub-journeys)",
+    "phases_completed": "deck: 8-phase pipeline delivered; commit 'Phase 8' (the ledger snapshot in the tree is stale, see achilles_version)",
+    "process.duration_sec": "not measured; no transcript or hook log survives for June runs",
+    "process.tokens_total": "not recorded",
+    "process.commit_span_sec": "git: scaffold commit ffc836b to deck commit dda8611 (35 commits). Wall-clock span including idle time, not active duration"
+  },
+  "notes": "June 2026 run 4 of 4; the deck still sitting at the repo root (qa-summary-deck.html/.pdf, Jun 22 22:01). Active baseline. docs/e2e/bug-discovery-report.md in this tree is a carry-over of run 3's, so the deck and adversarial-findings.md are the sources."
 }

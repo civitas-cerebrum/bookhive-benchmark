@@ -3,6 +3,9 @@
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
   TMP="$(mktemp -d)"
+  # cleanup.sh deletes files under $HOME/.claude/hooks: never let a test see the real HOME
+  export HOME="$TMP/home"
+  mkdir -p "$HOME"
   mkdir -p "$TMP/scripts" "$TMP/hooks" "$TMP/baseline" "$TMP/driver"
   cp "$ROOT/scripts/cleanup.sh" "$TMP/scripts/"
   cp "$ROOT/scripts/settings-patch.sh" "$TMP/scripts/" 2>/dev/null || true
@@ -16,6 +19,8 @@ setup() {
   : > .achilles/run-summary.json
   : > .benchmark/run/hook.log
   : > playwright.config.ts
+  mkdir -p results
+  printf '{"keep":"me"}\n' > results/2026-10-01T00-00-00Z.json
 }
 
 teardown() {
@@ -34,4 +39,15 @@ teardown() {
   [ -d "$TMP/hooks" ]
   [ -d "$TMP/scripts" ]
   [ -d "$TMP/baseline" ]
+}
+
+@test "cleanup never touches baseline/ or results/" {
+  printf '{"id":"x"}\n' >> "$TMP/baseline/history.jsonl"
+  before_b="$(cat "$TMP/baseline/history.jsonl")"
+  before_r="$(cat "$TMP/results/2026-10-01T00-00-00Z.json")"
+  run sh "$TMP/scripts/cleanup.sh"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TMP/baseline/history.jsonl")" = "$before_b" ]
+  [ -f "$TMP/baseline/baseline.json" ]
+  [ "$(cat "$TMP/results/2026-10-01T00-00-00Z.json")" = "$before_r" ]
 }

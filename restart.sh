@@ -2,7 +2,8 @@
 # restart.sh — the contributor's one-command entry point.
 #
 # Default:    prepare a fresh run (clean, install, bring up, wire).
-# --analyze:  after a session ends, run the analyzer.
+# --analyze:  after a session ends, run the analyzer and record the run in
+#             baseline/history.jsonl (it does NOT promote it to the baseline).
 #
 # Env:
 #   ACHILLES_PATH                    path to local achilles checkout (default: ../achilles)
@@ -16,7 +17,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 # Ensure our shipped scripts are executable before we use them
-chmod +x scripts/cleanup.sh scripts/settings-patch.sh hooks/*.sh hooks/lib/*.sh 2>/dev/null || true
+chmod +x scripts/cleanup.sh scripts/settings-patch.sh scripts/baseline.sh hooks/*.sh hooks/lib/*.sh 2>/dev/null || true
 
 ACHILLES_PATH="${ACHILLES_PATH:-../achilles}"
 
@@ -46,6 +47,12 @@ if [ "$mode" = "analyze" ]; then
     --project-dir "$ROOT" \
     --meta "$meta_file" \
     --out "$out_file"
+
+  # Log the run in baseline/history.jsonl. Never promotes: promoting is a
+  # deliberate step (scripts/baseline.sh promote). A failure here must not
+  # block cleanup or lose the results file, which is already on disk.
+  scripts/baseline.sh record "$out_file" \
+    || echo "warning: could not record run in baseline/history.jsonl (results file is intact)" >&2
 
   scripts/cleanup.sh
   echo
