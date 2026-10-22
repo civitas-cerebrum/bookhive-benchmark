@@ -20,7 +20,7 @@ describe('cli analyze', () => {
       '--hooks', 'analyzer/tests/fixtures/happy/hook.log',
       '--self-report', 'analyzer/tests/fixtures/happy/run-summary.json',
       '--retro', 'analyzer/tests/fixtures/happy/retrospective.json',
-      '--baseline', 'baseline/baseline.json',
+      '--baseline', 'analyzer/tests/fixtures/baseline/baseline.json',
       '--out', out,
     ], { cwd: repoRoot });
 

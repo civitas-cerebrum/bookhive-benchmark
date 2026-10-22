@@ -1,0 +1,74 @@
+{
+  "baseline_id": "fixture-baseline",
+  "deltas": {
+    "tokens.total": {
+      "baseline": 200,
+      "current": 210,
+      "delta_pct": 5,
+      "direction": "worse"
+    },
+    "duration_sec": {
+      "baseline": 20,
+      "current": 20,
+      "delta_pct": 0,
+      "direction": "same"
+    },
+    "outcomes.tests_passing.ratio": {
+      "baseline": 1,
+      "current": 1,
+      "delta_abs": 0,
+      "direction": "same"
+    },
+    "outcomes.tests_total": {
+      "baseline": 10,
+      "current": 12,
+      "delta_pct": 20,
+      "delta_abs": 2,
+      "direction": "better"
+    },
+    "outcomes.bugs_filed.count": {
+      "baseline": 1,
+      "current": 1,
+      "delta_pct": 0,
+      "delta_abs": 0,
+      "direction": "same",
+      "note": "bug detection on a frozen target: more found is better"
+    },
+    "outcomes.bugs_filed.high": {
+      "baseline": 0,
+      "current": 0,
+      "delta_pct": 0,
+      "delta_abs": 0,
+      "direction": "same",
+      "note": "bug detection on a frozen target: more found is better"
+    },
+    "outcomes.bugs_filed.medium": {
+      "baseline": 0,
+      "current": 1,
+      "delta_pct": 100,
+      "delta_abs": 1,
+      "direction": "better",
+      "note": "bug detection on a frozen target: more found is better"
+    },
+    "outcomes.bugs_filed.low": {
+      "baseline": 0,
+      "current": 0,
+      "delta_pct": 0,
+      "delta_abs": 0,
+      "direction": "same",
+      "note": "bug detection on a frozen target: more found is better"
+    },
+    "phases_completed": {
+      "baseline": 8,
+      "current": 8,
+      "delta_abs": 0,
+      "direction": "same"
+    }
+  },
+  "regression_verdict": "pass",
+  "regression_thresholds": {
+    "tokens_total_pct": 25,
+    "duration_pct": 50,
+    "tests_ratio_drop": 0.1
+  }
+}

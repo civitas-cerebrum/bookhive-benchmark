@@ -1,0 +1,18 @@
+{
+  "id": "fixture-sparse",
+  "date": "2026-01-01",
+  "achilles_version": null,
+  "achilles_commit": null,
+  "source": "reconstructed-from-deck",
+  "outcomes": {
+    "bugs_by_severity": { "critical": null, "high": null, "medium": null, "low": null },
+    "bugs_total": null,
+    "tests_total": 12,
+    "tests_passing_ratio": 1,
+    "scenarios": null,
+    "journeys": null,
+    "phases_completed": null
+  },
+  "process": { "duration_sec": null, "tokens_total": null },
+  "notes": "Test fixture: almost everything unknown, so only tests_total and the pass ratio can be compared."
+}

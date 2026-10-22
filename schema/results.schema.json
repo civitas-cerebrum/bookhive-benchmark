@@ -75,6 +75,7 @@
               "additionalProperties": false,
               "required": ["high", "med", "low"],
               "properties": {
+                "critical": { "type": "integer", "minimum": 0 },
                 "high": { "type": "integer", "minimum": 0 },
                 "med": { "type": "integer", "minimum": 0 },
                 "low": { "type": "integer", "minimum": 0 }
@@ -128,7 +129,9 @@
               "baseline": { "type": "number" },
               "current": { "type": "number" },
               "delta_pct": { "type": "number" },
-              "delta_abs": { "type": "number" }
+              "delta_abs": { "type": "number" },
+              "direction": { "enum": ["better", "worse", "same"] },
+              "note": { "type": "string" }
             }
           }
         },
@@ -140,7 +143,8 @@
           "properties": {
             "tokens_total_pct": { "type": "number" },
             "duration_pct": { "type": "number" },
-            "tests_ratio_drop": { "type": "number" }
+            "tests_ratio_drop": { "type": "number" },
+            "tests_total_drop_pct": { "type": "number" }
           }
         }
       }

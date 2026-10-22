@@ -30,7 +30,7 @@ export type SelfReport = {
   scenarios: { files: string[] };
   bugs: {
     ids: string[];
-    by_severity: { high: number; med: number; low: number };
+    by_severity: { critical?: number; high: number; med: number; low: number };
   };
   tests: { passing: number; total: number; playwright_exit_code: number };
   journey_map: { pages: number };
@@ -98,7 +98,7 @@ export type Results = {
   }>;
   outcomes: {
     scenarios_written: { count: number; files: string[] };
-    bugs_filed: { count: number; by_severity: { high: number; med: number; low: number }; ids: string[] };
+    bugs_filed: { count: number; by_severity: { critical?: number; high: number; med: number; low: number }; ids: string[] };
     tests_passing: { count: number; total: number; ratio: number };
     playwright_exit_code: number;
     journey_map_pages: number;
@@ -107,8 +107,8 @@ export type Results = {
   discrepancies: Array<{ kind: string; detail: string; self_report?: unknown; on_disk?: unknown }>;
   baseline_comparison: {
     baseline_id: string | null;
-    deltas: Record<string, { baseline: number; current: number; delta_pct?: number; delta_abs?: number }>;
+    deltas: Record<string, { baseline: number; current: number; delta_pct?: number; delta_abs?: number; direction?: 'better' | 'worse' | 'same'; note?: string }>;
     regression_verdict: RegressionVerdict;
-    regression_thresholds: { tokens_total_pct: number; duration_pct: number; tests_ratio_drop: number };
+    regression_thresholds: { tokens_total_pct: number; duration_pct: number; tests_ratio_drop: number; tests_total_drop_pct?: number };
   };
 };

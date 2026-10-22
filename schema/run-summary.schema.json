@@ -40,6 +40,7 @@
           "additionalProperties": false,
           "required": ["high", "med", "low"],
           "properties": {
+            "critical": { "type": "integer", "minimum": 0 },
             "high": { "type": "integer", "minimum": 0 },
             "med": { "type": "integer", "minimum": 0 },
             "low": { "type": "integer", "minimum": 0 }
