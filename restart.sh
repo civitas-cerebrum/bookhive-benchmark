@@ -78,9 +78,40 @@ case "$name" in
     ;;
 esac
 
-echo "==> install local achilles from $ACHILLES_PATH"
+echo "==> pack achilles from $ACHILLES_PATH"
+# A folder install (npm install <dir>) symlinks the package, so achilles'
+# postinstall sees its own repo path and skips silently: the harness never
+# lands and the run uses whatever is already in ~/.claude. Install a tarball.
+# achilles' prepack script builds the validator, checks the pack and runs its
+# tests, so the build happens as part of `npm pack`.
+pack_dir=$(mktemp -d)
+trap 'rm -rf "$pack_dir"' EXIT
+(cd "$ACHILLES_PATH" && npm pack --silent --pack-destination "$pack_dir" >/dev/null)
+tgz=$(ls -1t "$pack_dir"/*.tgz 2>/dev/null | head -1 || true)
+if [ -z "$tgz" ] || [ ! -f "$tgz" ]; then
+  echo "npm pack produced no tarball for $ACHILLES_PATH" >&2
+  exit 1
+fi
+
+echo "==> install achilles tarball $(basename "$tgz")"
 npm install --silent
-npm install --silent "$ACHILLES_PATH"
+npm install --silent "$tgz"
+
+echo "==> verify achilles harness landed"
+installed_scope=""
+if [ -f "$ROOT/.claude/achilles-install.json" ] && [ "$ROOT/.claude/achilles-install.json" -nt "$tgz" ] \
+   && ls "$ROOT/.claude/hooks/"achilles-*.sh >/dev/null 2>&1; then
+  installed_scope="project"
+elif [ -f "${HOME}/.claude/achilles-install.json" ] && [ "${HOME}/.claude/achilles-install.json" -nt "$tgz" ] \
+   && ls "${HOME}/.claude/hooks/"achilles-*.sh >/dev/null 2>&1; then
+  installed_scope="user"
+fi
+if [ -z "$installed_scope" ]; then
+  echo "achilles harness did not install: no fresh achilles-install.json plus achilles-*.sh hooks under $ROOT/.claude or ${HOME}/.claude" >&2
+  echo "the benchmark would run on a stale or missing harness; aborting" >&2
+  exit 1
+fi
+echo "achilles installed at ${installed_scope} scope"
 
 echo "==> copy benchmark hooks to ~/.claude/hooks/"
 mkdir -p "${HOME}/.claude/hooks"
@@ -122,6 +153,7 @@ cat > .benchmark/meta.json <<JSON
 {
   "achilles_version": "${achilles_version}",
   "achilles_commit": "${achilles_commit}",
+  "achilles_install_scope": "${installed_scope}",
   "claude_code_version": "${claude_version}",
   "mode": "local",
   "host": {
