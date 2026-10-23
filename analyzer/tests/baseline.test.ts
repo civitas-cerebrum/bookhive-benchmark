@@ -158,9 +158,12 @@ describe('promote', () => {
 describe('scripts/baseline.sh', () => {
   it('show prints the history table and marks the active baseline', async () => {
     const { stdout } = await exec('sh', ['scripts/baseline.sh', 'show'], { cwd: repoRoot, env: { ...process.env, BASELINE_DIR: join(repoRoot, 'baseline') } });
+    // The active baseline is whatever baseline/baseline.json holds; never hardcode it.
+    const active = JSON.parse(await readFile(join(repoRoot, 'baseline/baseline.json'), 'utf8')).id as string;
+    const esc = active.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     expect(stdout).toContain('2026-06-22T20:01:58Z-dda8611');
-    expect(stdout).toMatch(/\*\s+2026-06-22T20:01:58Z-dda8611/);
-    expect(stdout).not.toMatch(/\*\s+2026-06-13/);
+    expect(stdout).toMatch(new RegExp(`\\*\\s+${esc}`));
+    expect(stdout.match(/^\*\s+\d{4}-/gm)?.length).toBe(1);
   }, 30_000);
 
   it('rejects an unknown subcommand', async () => {
