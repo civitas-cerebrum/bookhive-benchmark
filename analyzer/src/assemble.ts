@@ -24,12 +24,44 @@ function phaseRange(hookEvents: HookEvent[], phase: PhaseName): { start?: HookEv
   return out;
 }
 
+function inWindow(ts: string, start: number, end: number): boolean {
+  const t = Date.parse(ts);
+  return !Number.isNaN(t) && !Number.isNaN(start) && !Number.isNaN(end) && t >= start && t <= end;
+}
+
+function ratioOf(count: number | null, total: number | null): number | null {
+  if (count === null || total === null) return null;
+  return total === 0 ? 0 : count / total;
+}
+
 function secondsBetween(a: string, b: string): number {
   return Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 1000));
 }
 
+function hooklessTotals(turns: AssembleInputs['turns'], phasesOut: Results['phases']): Results['totals'] {
+  let tokens = ZERO_TOKENS;
+  let tool_calls = 0;
+  let dispatches = 0;
+  for (const t of turns) {
+    tokens = addTokens(tokens, t.tokens);
+    tool_calls += t.tool_calls.length;
+    dispatches += t.tool_calls.filter((c) => c.name === 'Agent' || c.name === 'Task').length;
+  }
+  return {
+    tokens,
+    turns: turns.length,
+    tool_calls,
+    subagent_dispatches: dispatches,
+    gate_failures: phasesOut.filter((p) => p.gate_outcome === 'fail').length,
+    retries: phasesOut.reduce((s, p) => s + p.retries, 0),
+  };
+}
+
 export function assemble(inputs: AssembleInputs): Results {
   const { turns, hookEvents, selfReport, retrospective, meta } = inputs;
+  const evidence = inputs.evidence ?? {};
+  // Without phase hooks (no hook log) phases are windowed by the self-report ledger timestamps.
+  const hookless = !hookEvents.some((e) => e.kind === 'phase.start');
   const discrepancies: Results['discrepancies'] = [];
 
   const started_at = turns[0]?.timestamp ?? new Date(0).toISOString();
@@ -44,6 +76,9 @@ export function assemble(inputs: AssembleInputs): Results {
   const phasesOut: Results['phases'] = phaseRanges.map(({ name, start, end }) => {
     const startIdx = start && start.kind === 'phase.start' ? start.turn_index : -1;
     const endIdx = end && end.kind === 'phase.end' ? end.turn_index : -1;
+    const srp = selfReport?.phases.find((p) => p.name === name);
+    const winStart = hookless && srp?.started_at ? Date.parse(srp.started_at) : NaN;
+    const winEnd = hookless && srp?.ended_at ? Date.parse(srp.ended_at) : NaN;
     const inPhase = (i: number) => startIdx >= 0 && endIdx >= 0 && i >= startIdx && i <= endIdx;
 
     let tokens = ZERO_TOKENS;
@@ -52,11 +87,21 @@ export function assemble(inputs: AssembleInputs): Results {
     const subagent_dispatches: Results['phases'][number]['subagent_dispatches'] = [];
 
     for (const t of turns) {
-      if (!inPhase(t.turn_index)) continue;
+      if (hookless ? !inWindow(t.timestamp, winStart, winEnd) : !inPhase(t.turn_index)) continue;
       nTurns += 1;
       tokens = addTokens(tokens, t.tokens);
       for (const c of t.tool_calls) {
         tool_calls_by_name[c.name] = (tool_calls_by_name[c.name] ?? 0) + 1;
+      }
+    }
+    if (hookless) {
+      for (const t of turns) {
+        if (!inWindow(t.timestamp, winStart, winEnd)) continue;
+        for (const c of t.tool_calls) {
+          if (c.name === 'Agent' || c.name === 'Task') {
+            subagent_dispatches.push({ subagent_type: c.subagent_type ?? 'unknown', duration_sec: 0, tokens: ZERO_TOKENS, returned_ok: true });
+          }
+        }
       }
     }
     for (const e of hookEvents) {
@@ -78,9 +123,9 @@ export function assemble(inputs: AssembleInputs): Results {
 
     return {
       name,
-      started_at: start?.t ?? started_at,
-      ended_at: end?.t ?? ended_at,
-      duration_sec: start && end ? secondsBetween(start.t, end.t) : 0,
+      started_at: start?.t ?? (hookless ? srp?.started_at : undefined) ?? started_at,
+      ended_at: end?.t ?? (hookless ? srp?.ended_at : undefined) ?? ended_at,
+      duration_sec: start && end ? secondsBetween(start.t, end.t) : hookless && srp?.started_at && srp?.ended_at ? secondsBetween(srp.started_at, srp.ended_at) : 0,
       turns: nTurns,
       tokens,
       tool_calls_by_name,
@@ -90,7 +135,7 @@ export function assemble(inputs: AssembleInputs): Results {
     };
   });
 
-  const totals = phasesOut.reduce(
+  const totals = hookless ? hooklessTotals(turns, phasesOut) : phasesOut.reduce(
     (acc, p) => ({
       tokens: addTokens(acc.tokens, p.tokens),
       turns: acc.turns + p.turns,
@@ -124,21 +169,65 @@ export function assemble(inputs: AssembleInputs): Results {
           by_severity: selfReport.bugs.by_severity,
           ids: selfReport.bugs.ids,
         },
-        tests_passing: {
-          count: selfReport.tests.passing,
-          total: selfReport.tests.total,
-          ratio: selfReport.tests.total === 0 ? 0 : selfReport.tests.passing / selfReport.tests.total,
-        },
+        tests_passing: { count: selfReport.tests.passing, total: selfReport.tests.total, ratio: ratioOf(selfReport.tests.passing, selfReport.tests.total) },
         playwright_exit_code: selfReport.tests.playwright_exit_code,
         journey_map_pages: selfReport.journey_map.pages,
+        ...(selfReport.journey_map.journeys != null ? { journeys: selfReport.journey_map.journeys } : {}),
       }
     : {
         scenarios_written: { count: 0, files: [] },
         bugs_filed: { count: 0, by_severity: { high: 0, med: 0, low: 0 }, ids: [] },
-        tests_passing: { count: 0, total: 0, ratio: 0 },
-        playwright_exit_code: -1,
-        journey_map_pages: 0,
+        tests_passing: { count: null, total: null, ratio: null },
+        playwright_exit_code: null,
+        journey_map_pages: null,
       };
+
+  // Fill what the self-report lacks from on-disk evidence, noting the source. Never invent: stays null if no record.
+  const sources: Record<string, string> = {};
+  const gap = (metric: string, detail: string, derived: unknown) =>
+    discrepancies.push({ kind: 'self_report_gap', detail: `${metric}: ${detail}`, self_report: null, on_disk: derived });
+  const suite = evidence.suite;
+  const tp = outcomes.tests_passing;
+  if (tp.total === null || tp.count === null) {
+    if (suite) {
+      tp.total = suite.total;
+      tp.count = suite.passed;
+      tp.ratio = ratioOf(suite.passed, suite.total);
+      const src = `last full-suite run in the session transcript (${suite.at}): \`${suite.command}\``;
+      sources['tests_passing'] = src;
+      gap('tests_passing', `self-report has no totals; used ${src}`, { passed: suite.passed, total: suite.total });
+    } else {
+      sources['tests_passing'] = 'unavailable: no self-report totals and no full-suite run in the transcript';
+    }
+  }
+  if (tp.count !== null && tp.total !== null) {
+    // Known-defect failures come from the same suite run; only meaningful when that run matches the totals used.
+    if (suite && suite.total === tp.total && suite.passed === tp.count) {
+      tp.known_defect_failures = suite.known_defect_failures;
+      const denom = tp.total - suite.known_defect_failures;
+      tp.ratio_excluding_known_defects = denom > 0 ? tp.count / denom : null;
+      sources['tests_passing.ratio_excluding_known_defects'] = 'failing tests tagged @known-defect in the same suite run are removed from the denominator';
+    }
+  }
+  if (outcomes.playwright_exit_code === null) {
+    if (suite) {
+      outcomes.playwright_exit_code = suite.exit_code;
+      sources['playwright_exit_code'] = `exit code of the same full-suite run (${suite.at})`;
+      gap('playwright_exit_code', 'self-report has none; taken from the last full-suite run', suite.exit_code);
+    } else {
+      sources['playwright_exit_code'] = 'unavailable: no full-suite run in the transcript';
+    }
+  }
+  if (outcomes.journey_map_pages === null) {
+    if (evidence.journeyMapPages) {
+      outcomes.journey_map_pages = evidence.journeyMapPages.pages;
+      sources['journey_map_pages'] = evidence.journeyMapPages.source;
+      gap('journey_map_pages', 'self-report has none (it reports journeys, not pages); counted on disk', evidence.journeyMapPages.pages);
+    } else {
+      sources['journey_map_pages'] = 'unavailable: tests/e2e/docs/journey-map.md not found';
+    }
+  }
+  if (Object.keys(sources).length) outcomes.metric_sources = sources;
 
   const retro: Results['retrospective'] = retrospective ?? {
     novel_observations: '',

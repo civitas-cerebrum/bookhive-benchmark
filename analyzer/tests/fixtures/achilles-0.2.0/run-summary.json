@@ -1,0 +1,15 @@
+{
+  "meta": { "timestamp": "2026-10-23T10:31:49Z", "achilles_version": "0.2.0", "schema": "run-summary/v2" },
+  "phases": [
+    { "id": 1, "name": "Scaffold", "status": "completed", "startedAt": "2026-10-15T19:05:31Z", "finishedAt": "2026-10-15T19:12:00Z", "reviewerVerdict": "approved", "reviewerCycles": 1 },
+    { "id": 2, "name": "Groundwork", "status": "completed", "startedAt": "2026-10-15T19:14:00Z", "finishedAt": "2026-10-15T19:24:00Z", "reviewerVerdict": "approved", "reviewerCycles": 2 },
+    { "id": 3, "name": "Journey-mapping", "status": "in-progress", "startedAt": "2026-10-15T19:25:00Z", "finishedAt": null, "reviewerCycles": 1 }
+  ],
+  "scenarios": { "files": ["tests/e2e/a.spec.ts", "tests/e2e/b.spec.ts"] },
+  "bugs": {
+    "ids": ["a-1", "a-2", "a-3", "a-4", "a-5", "a-6"],
+    "by_severity": { "critical": 1, "high": 1, "medium": 2, "low": 1, "info": 1 }
+  },
+  "tests": { "passing": null, "failing": null, "flaky": null, "skipped": null, "total": null, "status": null },
+  "journey_map": { "journeys": 2 }
+}

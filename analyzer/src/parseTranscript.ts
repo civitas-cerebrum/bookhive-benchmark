@@ -18,12 +18,13 @@ export async function parseTranscript(path: string): Promise<TurnEvent[]> {
     const timestamp = typeof obj.timestamp === 'string' ? obj.timestamp : '';
     const role: TurnEvent['role'] = obj.type === 'user' ? 'user' : 'assistant';
 
-    const tool_calls: { name: string }[] = [];
+    const tool_calls: { name: string; subagent_type?: string }[] = [];
     const content = obj.message?.content;
     if (Array.isArray(content)) {
       for (const part of content) {
         if (part?.type === 'tool_use' && typeof part.name === 'string') {
-          tool_calls.push({ name: part.name });
+          const st = part.input?.subagent_type;
+          tool_calls.push(typeof st === 'string' ? { name: part.name, subagent_type: st } : { name: part.name });
         }
       }
     }

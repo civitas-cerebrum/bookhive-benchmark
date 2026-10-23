@@ -10,6 +10,7 @@ import { compare, readBaseline } from './compare.js';
 import { validateResults } from './validate.js';
 import type { AssembleInputs } from './types.js';
 import { runBaseline } from './baselineCli.js';
+import { deriveEvidence } from './deriveEvidence.js';
 
 function parseArgs(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -81,8 +82,9 @@ async function main() {
     readMetaJson(metaPath),
   ]);
 
-  const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta });
   const projectDir = args['project-dir'];
+  const evidence = await deriveEvidence(transcript, projectDir);
+  const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta, evidence });
   const checked = projectDir ? await crossCheckOnDisk(assembled, projectDir) : assembled;
   const final = compare(checked, baseline);
 

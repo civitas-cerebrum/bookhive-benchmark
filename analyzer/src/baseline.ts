@@ -1,6 +1,7 @@
 import { readFile, writeFile, appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { Results } from './types.js';
+import { actionableBugs } from './compare.js';
 
 export type Source = 'results.json' | 'reconstructed-from-ledger' | 'reconstructed-from-deck';
 
@@ -28,6 +29,11 @@ export type HistoryRecord = {
     bugs_total: number | null;
     tests_total: number | null;
     tests_passing_ratio: number | null;
+    /** Optional: ratio with failing @known-defect tests removed from the denominator. */
+    tests_passing_ratio_excl_known_defects?: number | null;
+    tests_known_defect_failures?: number | null;
+    /** Optional: informational findings (not counted in bugs_total). */
+    bugs_info?: number | null;
     scenarios: number | null;
     journeys: number | null;
     phases_completed: number | null;
@@ -100,9 +106,12 @@ export function fromResults(res: Results, opts: RecordOptions = {}): HistoryReco
   const sev = res.outcomes.bugs_filed.by_severity;
   const unknown = (v: string) => (!v || v === 'unknown' ? null : v);
   const phasesPassed = res.phases.filter((p) => p.gate_outcome === 'pass').length;
+  const o = res.outcomes;
   const sources: Record<string, string> = {
-    journeys: 'results.json carries journey_map_pages, not a journey count',
+    journeys: o.journeys == null ? 'results.json carries journey_map_pages, not a journey count' : 'self-report journey_map.journeys',
+    ...(o.metric_sources ?? {}),
   };
+  if (sev.info !== undefined) sources['bugs_total'] = `results bugs_filed.count (${o.bugs_filed.count}) minus ${sev.info} severity "info" observations`;
   if (sev.critical === undefined) sources['bugs_by_severity.critical'] = 'run-summary did not report a critical bucket';
   const rec: HistoryRecord = {
     id: res.run.id,
@@ -117,11 +126,11 @@ export function fromResults(res: Results, opts: RecordOptions = {}): HistoryReco
         medium: sev.med,
         low: sev.low,
       },
-      bugs_total: res.outcomes.bugs_filed.count,
-      tests_total: res.outcomes.tests_passing.total,
-      tests_passing_ratio: res.outcomes.tests_passing.ratio,
-      scenarios: res.outcomes.scenarios_written.count,
-      journeys: null,
+      bugs_total: actionableBugs(o.bugs_filed),
+      tests_total: o.tests_passing.total,
+      tests_passing_ratio: o.tests_passing.ratio,
+      scenarios: o.scenarios_written.count,
+      journeys: o.journeys ?? null,
       phases_completed: phasesPassed,
     },
     process: {
@@ -131,6 +140,11 @@ export function fromResults(res: Results, opts: RecordOptions = {}): HistoryReco
     metric_sources: sources,
     notes: opts.notes ?? '',
   };
+  if (o.tests_passing.ratio_excluding_known_defects != null) {
+    rec.outcomes.tests_passing_ratio_excl_known_defects = o.tests_passing.ratio_excluding_known_defects;
+    rec.outcomes.tests_known_defect_failures = o.tests_passing.known_defect_failures ?? null;
+  }
+  if (sev.info !== undefined) rec.outcomes.bugs_info = sev.info;
   if (res.run.truncated) rec.truncated = true;
   return rec;
 }

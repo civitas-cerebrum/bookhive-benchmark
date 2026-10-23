@@ -78,7 +78,8 @@
                 "critical": { "type": "integer", "minimum": 0 },
                 "high": { "type": "integer", "minimum": 0 },
                 "med": { "type": "integer", "minimum": 0 },
-                "low": { "type": "integer", "minimum": 0 }
+                "low": { "type": "integer", "minimum": 0 },
+                "info": { "type": "integer", "minimum": 0 }
               }
             },
             "ids": { "type": "array", "items": { "type": "string" } }
@@ -89,13 +90,17 @@
           "additionalProperties": false,
           "required": ["count", "total", "ratio"],
           "properties": {
-            "count": { "type": "integer", "minimum": 0 },
-            "total": { "type": "integer", "minimum": 0 },
-            "ratio": { "type": "number", "minimum": 0, "maximum": 1 }
+            "count": { "type": ["integer", "null"], "minimum": 0 },
+            "total": { "type": ["integer", "null"], "minimum": 0 },
+            "ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "known_defect_failures": { "type": ["integer", "null"], "minimum": 0 },
+            "ratio_excluding_known_defects": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
           }
         },
-        "playwright_exit_code": { "type": "integer" },
-        "journey_map_pages": { "type": "integer", "minimum": 0 }
+        "playwright_exit_code": { "type": ["integer", "null"] },
+        "journey_map_pages": { "type": ["integer", "null"], "minimum": 0 },
+        "journeys": { "type": ["integer", "null"], "minimum": 0 },
+        "metric_sources": { "type": "object", "additionalProperties": { "type": "string" } }
       }
     },
     "retrospective": { "$ref": "#/$defs/retrospective" },

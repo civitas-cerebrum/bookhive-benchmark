@@ -74,6 +74,11 @@ function delta(
   return d;
 }
 
+/** Bugs of critical..low severity; `info` entries are observations, not bugs, and the history baselines never counted them. */
+export function actionableBugs(b: Results['outcomes']['bugs_filed']): number {
+  return b.count - (b.by_severity.info ?? 0);
+}
+
 const DETECTION = 'bug detection on a frozen target: more found is better';
 
 export function compare(current: Results, baseline: Baseline | null): Results {
@@ -94,8 +99,9 @@ export function compare(current: Results, baseline: Baseline | null): Results {
     ['tokens.total', delta(baseline.process?.tokens_total, current.totals.tokens.total, 'lower-better', 'pct')],
     ['duration_sec', delta(baseline.process?.duration_sec, current.run.duration_sec, 'lower-better', 'pct')],
     ['outcomes.tests_passing.ratio', delta(bo.tests_passing_ratio, co.tests_passing.ratio, 'higher-better', 'abs')],
+    ['outcomes.tests_passing.ratio_excluding_known_defects', delta(bo.tests_passing_ratio, co.tests_passing.ratio_excluding_known_defects, 'higher-better', 'abs', 'informational: @known-defect failures are red by design')],
     ['outcomes.tests_total', delta(bo.tests_total, co.tests_passing.total, 'higher-better', 'both')],
-    ['outcomes.bugs_filed.count', delta(bo.bugs_total, co.bugs_filed.count, 'higher-better', 'both', DETECTION)],
+    ['outcomes.bugs_filed.count', delta(bo.bugs_total, actionableBugs(co.bugs_filed), 'higher-better', 'both', DETECTION)],
     ['outcomes.bugs_filed.critical', delta(bo.bugs_by_severity.critical, cs.critical, 'higher-better', 'both', DETECTION)],
     ['outcomes.bugs_filed.high', delta(bo.bugs_by_severity.high, cs.high, 'higher-better', 'both', DETECTION)],
     ['outcomes.bugs_filed.medium', delta(bo.bugs_by_severity.medium, cs.med, 'higher-better', 'both', DETECTION)],
