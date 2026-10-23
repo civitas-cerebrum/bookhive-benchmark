@@ -58,6 +58,23 @@ The `results.json` schema is at [`schema/results.schema.json`](schema/results.sc
 
 ---
 
+## Baseline
+
+The baseline is the reference run every new run is compared against ("vs baseline" in the verdict). It is [`baseline/baseline.json`](baseline/baseline.json); every run ever logged lives in the append-only, committed [`baseline/history.jsonl`](baseline/history.jsonl). History includes four reconstructed June 2026 runs (rebuilt from their decks and ledgers; unknown metrics are `null` with a note in `metric_sources`).
+
+```sh
+scripts/baseline.sh show                     # table of history, active baseline marked *
+scripts/baseline.sh record results/<ts>.json # append a run (restart.sh --analyze does this for you)
+scripts/baseline.sh promote <results.json|id> [--force]   # make a run the active baseline
+```
+
+- `record` only appends. `promote` is always a deliberate step; it keeps the outgoing baseline in history and refuses a truncated or incomplete run (fewer than 8 phases, no tests) unless `--force`.
+- Bugs are compared by severity (critical/high/medium/low) and total tests, not just pass rate and tokens. More bugs found against the frozen BookHive is better detection (`direction: "better"`); finding fewer critical bugs than the baseline warns. Metrics that are `null` in the baseline are skipped.
+- `cleanup.sh` and `restart.sh` never touch `baseline/` or `results/`; `npm test` fails if they start to. `results/*.json` is gitignored (it survives restarts on disk but not `git clean`), so `history.jsonl` is the durable record.
+- `baseline/pending-notes.txt` is prepended to the notes of the next recorded run, then emptied. It currently flags the in-progress October run as a mixed build: phases 1-5 on an Oct 10 achilles install, later passes on Achilles 84d32d4 and a3538fb.
+
+---
+
 ## CI integration with achilles
 
 When an achilles PR opens, a tiny workflow in achilles fires a `repository_dispatch` to this repo. This repo runs the benchmark headless via `claude -p`, posts a `bookhive-benchmark` check_run on the achilles PR, and comments the delta table.
@@ -80,9 +97,9 @@ bookhive-benchmark/
 ├── hooks/                    # opt-in benchmark hooks (BOOKHIVE_BENCHMARK=1)
 ├── driver/                   # docker-compose.yml, retro prompt, CLAUDE.md snippet
 ├── ci/                       # workflow source + achilles snippets + self-test fakes
-├── scripts/                  # cleanup.sh, settings-patch.sh
+├── scripts/                  # cleanup.sh, settings-patch.sh, baseline.sh
 ├── schema/                   # results.schema.json + run-summary.schema.json
-├── baseline/                 # baseline.json (updated on main)
+├── baseline/                 # baseline.json (active) + history.jsonl (append-only)
 └── results/                  # per-run results (gitignored except .gitkeep)
 ```
 
@@ -103,7 +120,7 @@ CI runs all three on every PR to this repo (`.github/workflows/self-test.yml`).
 ## Contributing
 
 1. Open a PR with your changes.
-2. Run the benchmark locally and update `baseline/baseline.json` if your changes affect the baseline (rare).
+2. Run the benchmark locally. Promote a new baseline with `scripts/baseline.sh promote` only if your changes should move it (rare).
 3. CI runs all tests on every PR.
 
 For changes that affect achilles directly, see [`ci/achilles-snippets/README.md`](ci/achilles-snippets/README.md) for the changes achilles needs.

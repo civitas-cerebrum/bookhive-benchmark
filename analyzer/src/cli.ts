@@ -9,6 +9,8 @@ import { assemble, crossCheckOnDisk } from './assemble.js';
 import { compare, readBaseline } from './compare.js';
 import { validateResults } from './validate.js';
 import type { AssembleInputs } from './types.js';
+import { runBaseline } from './baselineCli.js';
+import { deriveEvidence } from './deriveEvidence.js';
 
 function parseArgs(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -54,8 +56,11 @@ async function readMetaJson(path: string | undefined): Promise<AssembleInputs['m
 
 async function main() {
   const cmd = process.argv[2];
+  if (cmd === 'baseline') {
+    process.exit(await runBaseline(process.argv.slice(3)));
+  }
   if (cmd !== 'analyze') {
-    console.error('usage: bookhive-benchmark analyze --transcript <path> --hooks <path> --self-report <path> --retro <path> [--baseline <path>] [--out <path>] [--meta <path>] [--project-dir <path>]');
+    console.error('usage: bookhive-benchmark baseline <record|promote|show> | analyze --transcript <path> --hooks <path> --self-report <path> --retro <path> [--baseline <path>] [--out <path>] [--meta <path>] [--project-dir <path>]');
     process.exit(2);
   }
   const args = parseArgs(process.argv.slice(3));
@@ -77,8 +82,9 @@ async function main() {
     readMetaJson(metaPath),
   ]);
 
-  const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta });
   const projectDir = args['project-dir'];
+  const evidence = await deriveEvidence(transcript, projectDir);
+  const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta, evidence });
   const checked = projectDir ? await crossCheckOnDisk(assembled, projectDir) : assembled;
   const final = compare(checked, baseline);
 

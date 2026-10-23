@@ -1,6 +1,37 @@
 {
-  "id": "2026-05-30T00:00:00Z-main",
-  "totals": { "tokens": { "total": 200 } },
-  "run": { "duration_sec": 20 },
-  "outcomes": { "tests_passing": { "ratio": 1.0 } }
+  "id": "2026-10-15T19:04:43.508Z-84d32d4",
+  "date": "2026-10-15",
+  "achilles_version": "0.2.0",
+  "achilles_commit": "84d32d4",
+  "source": "results.json",
+  "outcomes": {
+    "bugs_by_severity": {
+      "critical": 10,
+      "high": 9,
+      "medium": 25,
+      "low": 66
+    },
+    "bugs_total": 110,
+    "tests_total": 268,
+    "tests_passing_ratio": 0.9776119402985075,
+    "scenarios": 45,
+    "journeys": 8,
+    "phases_completed": 8,
+    "tests_passing_ratio_excl_known_defects": 1,
+    "tests_known_defect_failures": 6,
+    "bugs_info": 203
+  },
+  "process": {
+    "duration_sec": 660426,
+    "tokens_total": 749782153
+  },
+  "metric_sources": {
+    "journeys": "self-report journey_map.journeys",
+    "tests_passing": "last full-suite run in the session transcript (2026-10-23T10:22:16.192Z): `npx playwright test --quiet --reporter=dot`",
+    "tests_passing.ratio_excluding_known_defects": "failing tests tagged @known-defect in the same suite run are removed from the denominator",
+    "playwright_exit_code": "exit code of the same full-suite run (2026-10-23T10:22:16.192Z)",
+    "journey_map_pages": "tests/e2e/docs/journey-map.md: 11 rows in the Site Map table",
+    "bugs_total": "results bugs_filed.count (313) minus 203 severity \"info\" observations"
+  },
+  "notes": "Mixed build, not a single-version run: phases 1-5 ran on an Oct 10 achilles install; the later passes ran on Achilles 84d32d4 and a3538fb. Read deltas vs baseline with that in mind."
 }

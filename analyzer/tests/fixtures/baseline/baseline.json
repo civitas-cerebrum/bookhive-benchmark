@@ -1,0 +1,18 @@
+{
+  "id": "fixture-baseline",
+  "date": "2026-01-01",
+  "achilles_version": "0.0.0-fixture",
+  "achilles_commit": null,
+  "source": "results.json",
+  "outcomes": {
+    "bugs_by_severity": { "critical": 1, "high": 0, "medium": 0, "low": 0 },
+    "bugs_total": 1,
+    "tests_total": 10,
+    "tests_passing_ratio": 1,
+    "scenarios": 2,
+    "journeys": null,
+    "phases_completed": 8
+  },
+  "process": { "duration_sec": 20, "tokens_total": 200 },
+  "notes": "Test fixture. Critical is known here but the happy fixture run reports no critical bucket, so that delta must be skipped."
+}

@@ -7,7 +7,8 @@ set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if command -v docker >/dev/null 2>&1 && [ -f "driver/docker-compose.yml" ]; then
+# BENCHMARK_SKIP_DOCKER=1 skips this step (used by tests so they can never reach a real daemon).
+if [ "${BENCHMARK_SKIP_DOCKER:-}" != "1" ] && command -v docker >/dev/null 2>&1 && [ -f "driver/docker-compose.yml" ]; then
   docker compose -f driver/docker-compose.yml down -v --remove-orphans 2>/dev/null || true
 fi
 
