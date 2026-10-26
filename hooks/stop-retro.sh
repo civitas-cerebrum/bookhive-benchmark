@@ -11,6 +11,15 @@ if [ -f "$retro" ]; then
   exit 0
 fi
 
+# The QA work may run in a subagent after the main turn ends (Achilles 0.1.8
+# delegates it to an orchestrator), so ask only once the onboarding has
+# completed its Report phase.
+status="${PWD}/tests/e2e/docs/onboarding-status.json"
+if [ "$(jq -r '[.phases[]? | select(.name == "Report")][0].status // ""' "$status" 2>/dev/null)" != "completed" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
 marker="${BENCHMARK_DIR:-/tmp}/run/.retro-asked"
 if [ -f "$marker" ]; then
   printf '{}\n'

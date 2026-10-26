@@ -11,6 +11,7 @@ import { validateResults } from './validate.js';
 import type { AssembleInputs } from './types.js';
 import { runBaseline } from './baselineCli.js';
 import { deriveEvidence } from './deriveEvidence.js';
+import { sessionTranscripts } from './sessionFiles.js';
 
 function parseArgs(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -73,17 +74,19 @@ async function main() {
   const outPath = resolve(args.out ?? `results/${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   const metaPath = args.meta;
 
-  const [turns, hookEvents, selfReport, retrospective, baseline, meta] = await Promise.all([
-    parseTranscript(transcript),
+  const transcripts = await sessionTranscripts(transcript);
+  const [turnLists, hookEvents, selfReport, retrospective, baseline, meta] = await Promise.all([
+    Promise.all(transcripts.map(parseTranscript)),
     parseHookLog(hookLog),
     readSelfReport(selfReportPath),
     readRetrospective(retroPath),
     baselinePath ? readBaseline(baselinePath) : Promise.resolve(null),
     readMetaJson(metaPath),
   ]);
+  const turns = turnLists.flat().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   const projectDir = args['project-dir'];
-  const evidence = await deriveEvidence(transcript, projectDir);
+  const evidence = await deriveEvidence(transcripts, projectDir);
   const assembled = assemble({ turns, hookEvents, selfReport, retrospective, meta, evidence });
   const checked = projectDir ? await crossCheckOnDisk(assembled, projectDir) : assembled;
   const final = compare(checked, baseline);

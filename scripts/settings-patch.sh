@@ -59,14 +59,14 @@ fi
   .hooks //= {} |
   .hooks |= (ensureArr("PostToolUse") | ensureArr("PreToolUse") | ensureArr("Stop"))
   | .hooks.PostToolUse += [
-      {benchmark_tag: $tag, matcher: "Write|Edit", command: $phaseStart},
-      {benchmark_tag: $tag, matcher: "Write|Edit", command: $phaseEnd}
+      {benchmark_tag: $tag, matcher: "Write|Edit", hooks: [{type: "command", command: $phaseStart}]},
+      {benchmark_tag: $tag, matcher: "Write|Edit", hooks: [{type: "command", command: $phaseEnd}]}
     ]
   | .hooks.PreToolUse += [
-      {benchmark_tag: $tag, matcher: "Task", command: $subagent}
+      {benchmark_tag: $tag, matcher: "Task", hooks: [{type: "command", command: $subagent}]}
     ]
   | .hooks.Stop += [
-      {benchmark_tag: $tag, command: $stop}
+      {benchmark_tag: $tag, hooks: [{type: "command", command: $stop}]}
     ]
 ' "$SETTINGS" > "$tmp"
 mv "$tmp" "$SETTINGS"

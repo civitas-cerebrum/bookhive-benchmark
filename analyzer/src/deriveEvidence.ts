@@ -86,9 +86,10 @@ export async function countJourneyMapPages(projectDir: string): Promise<{ pages:
   return null;
 }
 
-export async function deriveEvidence(transcriptPath: string, projectDir: string | undefined): Promise<Evidence> {
+export async function deriveEvidence(transcriptPaths: string[], projectDir: string | undefined): Promise<Evidence> {
+  const runs = (await Promise.all(transcriptPaths.map(findLastSuiteRun))).filter((r): r is SuiteRun => r !== null);
   return {
-    suite: await findLastSuiteRun(transcriptPath),
+    suite: runs.reduce<SuiteRun | null>((a, r) => (a === null || r.at > a.at ? r : a), null),
     journeyMapPages: projectDir ? await countJourneyMapPages(projectDir) : null,
   };
 }

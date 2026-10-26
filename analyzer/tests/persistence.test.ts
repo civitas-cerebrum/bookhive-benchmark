@@ -77,6 +77,7 @@ describe('cleanup.sh leaves baseline/ and results/ intact (runs a copy in a sand
     await mkdir(join(proj, 'scripts'), { recursive: true });
     await cp(join(repoRoot, 'scripts/cleanup.sh'), join(proj, 'scripts/cleanup.sh'));
     await cp(join(repoRoot, 'scripts/settings-patch.sh'), join(proj, 'scripts/settings-patch.sh'));
+    await cp(join(repoRoot, 'scripts/compose.sh'), join(proj, 'scripts/compose.sh'));
     await cp(join(repoRoot, 'baseline'), join(proj, 'baseline'), { recursive: true });
     await mkdir(join(proj, 'results'));
     await writeFile(join(proj, 'results/2026-10-01T00-00-00Z.json'), '{"keep":"me"}\n');
@@ -108,7 +109,8 @@ describe('cleanup.sh leaves baseline/ and results/ intact (runs a copy in a sand
     await run({ BENCHMARK_SKIP_DOCKER: '1' });
     await expect(stat(join(root, 'docker.calls'))).rejects.toThrow(); // guard honoured
     await run({});
-    expect((await readFile(join(root, 'docker.calls'), 'utf8')).trim()).toBe('compose -f driver/docker-compose.yml down -v --remove-orphans');
+    // compose.sh probes `docker compose version` before the real call.
+    expect((await readFile(join(root, 'docker.calls'), 'utf8')).trim().split('\n')).toEqual(['compose version', 'compose -f driver/docker-compose.yml down -v --remove-orphans']);
 
     expect(await snapshot('baseline')).toEqual(beforeBaseline);
     expect(await snapshot('results')).toEqual(beforeResults);

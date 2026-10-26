@@ -17,7 +17,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 # Ensure our shipped scripts are executable before we use them
-chmod +x scripts/cleanup.sh scripts/settings-patch.sh scripts/baseline.sh hooks/*.sh hooks/lib/*.sh 2>/dev/null || true
+chmod +x scripts/cleanup.sh scripts/compose.sh scripts/run-summary.sh scripts/settings-patch.sh scripts/baseline.sh hooks/*.sh hooks/lib/*.sh 2>/dev/null || true
 
 ACHILLES_PATH="${ACHILLES_PATH:-../achilles}"
 
@@ -37,6 +37,9 @@ if [ "$mode" = "analyze" ]; then
   meta_file="$ROOT/.benchmark/meta.json"
   out_file="$ROOT/results/$(date -u +%Y-%m-%dT%H-%M-%SZ).json"
   mkdir -p "$ROOT/results"
+
+  # Achilles 0.1.8+ writes no run summary of its own; derive it from the run's files.
+  scripts/run-summary.sh "$ROOT" || echo "warning: could not derive .achilles/run-summary.json" >&2
 
   npx tsx analyzer/src/cli.ts analyze \
     --transcript "$transcript" \
@@ -88,6 +91,9 @@ esac
 echo "==> install local achilles from $ACHILLES_PATH"
 npm install --silent
 npm install --silent "$ACHILLES_PATH"
+# npm 12 blocks dependency install scripts by default; run the Achilles postinstall
+# (plugin registration, Chromium) explicitly. It is idempotent.
+INIT_CWD="$ROOT" node node_modules/@civitas-cerebrum/achilles/scripts/postinstall.js
 
 echo "==> copy benchmark hooks to ~/.claude/hooks/"
 mkdir -p "${HOME}/.claude/hooks"
@@ -98,7 +104,7 @@ echo "==> register hooks in ~/.claude/settings.json"
 scripts/settings-patch.sh add
 
 echo "==> bring up BookHive"
-docker compose -f driver/docker-compose.yml up -d
+scripts/compose.sh -f driver/docker-compose.yml up -d
 echo "==> wait for healthcheck"
 tries=60
 status=""
@@ -114,6 +120,8 @@ if [ "$status" != "healthy" ]; then
   echo "BookHive failed to become healthy" >&2
   exit 1
 fi
+echo "==> seed BookHive"
+curl -fsS -X POST http://localhost:8080/api/seed >/dev/null
 
 echo "==> write benchmark state"
 mkdir -p .benchmark/run

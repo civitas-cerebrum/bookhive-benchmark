@@ -1,14 +1,36 @@
+# BookHive, frozen: the published 0.0.3 images pinned by digest.
+# The frontend serves the app on :8080 and proxies /api, /swagger-ui and /api-docs to the backend.
 services:
   bookhive:
-    image: umutayb/bookhive:latest
+    image: umutayb/book-hive-frontend:0.0.3@sha256:fbccbb12f7cc14ca3f32df5d5638fe6dc34770567c68c4b2f5506aedd8f201fe
     container_name: bookhive-benchmark-bookhive
     ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: "default"
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null && curl -fsS http://localhost/api-docs >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  backend:
+    image: umutayb/book-hive-backend:0.0.3@sha256:f6e9bcc2d2026691cfd101fa2a695390b1c2ef22c4f89ef51ad2f45767438e41
+    container_name: bookhive-benchmark-backend
+    depends_on:
+      - mongodb
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bookhive
+      JWT_SECRET: bookhive-benchmark-jwt-secret-not-for-production-0123456789abcdef0123456789abcdef
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api-docs >/dev/null || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 30
       start_period: 30s
+
+  mongodb:
+    image: mongo:7@sha256:c53852c00c23ca9f23fc39690350ffa9a80e3642fe8f96879726d8da0abe80a7
+    container_name: bookhive-benchmark-mongodb

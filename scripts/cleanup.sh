@@ -9,7 +9,7 @@ cd "$ROOT"
 
 # BENCHMARK_SKIP_DOCKER=1 skips this step (used by tests so they can never reach a real daemon).
 if [ "${BENCHMARK_SKIP_DOCKER:-}" != "1" ] && command -v docker >/dev/null 2>&1 && [ -f "driver/docker-compose.yml" ]; then
-  docker compose -f driver/docker-compose.yml down -v --remove-orphans 2>/dev/null || true
+  scripts/compose.sh -f driver/docker-compose.yml down -v --remove-orphans 2>/dev/null || true
 fi
 
 rm -rf tests playwright-report test-results playwright.config.ts package-lock.json.achilles-bak
